@@ -57,7 +57,7 @@
       padding: 1rem;
       border-radius: 5px;
     }
-    #toggleBtn {
+    #toggleRitBtn {
       margin-top: 1rem;
       background: gold;
       cursor: pointer;
@@ -67,7 +67,7 @@
 <body>
   <h1>FA Taxi Service</h1>
   
-  <button id="toggleBtn" onclick="toggleRit()">➕ Plan rit</button>
+  <button id="toggleRitBtn" onclick="toggleRit()">➕ Plan rit</button>
   
   <div class="container" id="ritContainer" style="display: none;">
     <label for="ophaaladres" id="label-ophaaladres">📍 Ophaaladres</label>
@@ -115,8 +115,9 @@
 
     function toggleRit() {
       const container = document.getElementById("ritContainer");
-      container.style.display = container.style.display === "none" ? "block" : "none";
-      document.getElementById("toggleBtn").innerText = container.style.display === "none" ? "➕ Plan rit" : "➖ Verberg formulier";
+      const isVisible = container.style.display === "block";
+      container.style.display = isVisible ? "none" : "block";
+      document.getElementById("toggleRitBtn").innerText = isVisible ? "➕ Plan rit" : "➖ Verberg formulier";
     }
 
     function toggleSpoed() {
@@ -173,7 +174,7 @@
       if (afstand <= 3) basis = 15;
       else if (afstand <= 4) basis = 17.5;
       else if (afstand <= 5) basis = 20;
-      else if (afstand <= 6) basis = 22.5;
+      else if (afstand <= 6) basis = 22.50;
       else if (afstand <= 7) basis = 25;
       else if (afstand <= 8) basis = 27.5;
       else if (afstand <= 9) basis = 30;
