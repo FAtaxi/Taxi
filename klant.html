@@ -51,34 +51,34 @@
       border-radius: 5px;
       margin-top: 1rem;
     }
-    #geplandeRitContainer {
-      display: none; /* Start verborgen */
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #333;
-      border-radius: 5px;
+    #flag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      width: 30px;
     }
   </style>
 </head>
 <body>
+  <img id="flag" src="https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg" onclick="veranderTaal()" title="Switch to English">
+
   <h1>FA Taxi Service</h1>
-  
-  <button onclick="toggleGeplandeRit()">➕ Plan rit</button>
-  
   <div class="container">
-    <div id="geplandeRitContainer">
-      <label for="tijdstip">🕒 Gewenst tijdstip (optioneel)</label>
-      <input type="datetime-local" id="tijdstip">
-    </div>
-
-    <label for="ophaaladres">📍 Ophaaladres</label>
+    <label for="ophaaladres" id="label-ophaaladres">📍 Ophaaladres</label>
     <input type="text" id="ophaaladres" placeholder="Bijv. Stationsplein 1, Amsterdam">
-    <button onclick="gebruikLocatie()">📌 Haal mijn locatie op</button>
+    <button onclick="gebruikLocatie()" id="btn-locatie">📌 Haal mijn locatie op</button>
 
-    <label for="afzetadres">📍 Afzetadres</label>
+    <label for="afzetadres" id="label-afzetadres">📍 Afzetadres</label>
     <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam">
 
-    <label for="betaalmethode">💳 Kies een betaalmethode</label>
+    <!-- Toegevoegde "+" knop, gelijk gemaakt met de andere knoppen -->
+    <button onclick="toggleGeplandeRit()" style="width: 100%; margin: 0.5rem 0;">➕ Plan rit</button>
+
+    <label for="tijdstip" id="label-tijdstip">🕒 Gewenst tijdstip (optioneel)</label>
+    <input type="datetime-local" id="tijdstip">
+
+    <label for="betaalmethode" id="label-betaalmethode">💳 Kies een betaalmethode</label>
     <select id="betaalmethode">
       <option value="Tikkie">🔗 Tikkie (online betaallink)</option>
       <option value="Online betaallink">🌐 Online betaallink</option>
@@ -86,16 +86,20 @@
       <option value="Contant">💶 Contant</option>
     </select>
 
-    <label for="kortingscode">🎟️ Kortingscode (optioneel)</label>
+    <label for="kortingscode" id="label-kortingscode">🎟️ Kortingscode (optioneel)</label>
     <input type="text" id="kortingscode" placeholder="Voer uw kortingscode in">
 
     <button onclick="toggleSpoed()" id="spoedBtn">🚨 Voeg €10 spoedrit toe</button>
     <input type="checkbox" id="akkoord"> Ik ga akkoord met de annuleringskosten van €10,-
-    <button onclick="berekenRit()">🚖 Bereken ritprijs</button>
+    <button onclick="berekenRit()" id="btn-bereken">🚖 Bereken ritprijs</button>
 
     <div id="resultaat"></div>
 
-    <button style="margin-top: 1rem;" onclick="toonSpecificaties()">🔐 Toon berekening (beheerder)</button>
+    <a id="whatsappKnop" href="#" target="_blank" style="display:none;">
+      <button>📩 Bevestig & Verstuur naar WhatsApp</button>
+    </a>
+
+    <button onclick="toonSpecificaties()" style="margin-top: 1rem;">🔐 Toon berekening (beheerder)</button>
     <div id="specificaties" style="display:none;"></div>
   </div>
 
@@ -103,12 +107,7 @@
     let spoedToeslag = 0;
     let berekenData = {};
 
-    function toggleGeplandeRit() {
-      const container = document.getElementById("geplandeRitContainer");
-      container.style.display = container.style.display === "none" ? "block" : "none";
-      // Verander de tekst van de knop
-      event.target.innerText = container.style.display === "none" ? "➕ Plan rit" : "➖ Verberg tijdstip";
-    }
+    const weatherApiKey = "9d1afafb80f94518850212856252004";
 
     function toggleSpoed() {
       spoedToeslag = spoedToeslag === 0 ? 10 : 0;
@@ -126,29 +125,134 @@
       });
     }
 
-    function berekenRit() {
-      // Hier komt de logica om de ritprijs te berekenen.
-      // Dit is een placeholder voor jouw eigen implementatie.
+    async function getCoordinates(adres) {
+      const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=22f9046cc2b242a3a5f08cfabc005f78`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.results.length === 0) throw new Error("Geen locatie gevonden.");
+      const { lat, lng } = data.results[0].geometry;
+      return [lng, lat];
+    }
+
+    async function getWeer(lat, lon) {
+      try {
+        const url = `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${lat},${lon}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.current?.condition?.text || "";
+      } catch {
+        return "";
+      }
+    }
+
+    function bepaalDrukteToeslag() {
+      const u = new Date().getHours();
+      const d = new Date().getDay();
+      if ((u >= 7 && u <= 9) || (u >= 16 && u <= 18)) return 1.15;
+      if (d === 0 || d === 6) return 1.15;
+      return 1;
+    }
+
+    function bepaalNachttoeslag() {
+      const u = new Date().getHours();
+      return (u >= 23 || u < 7) ? 1.3 : 1;
+    }
+
+    function berekenRitprijs(afstand, duur, weer) {
+      let basis = 0;
+      if (afstand <= 3) basis = 10;
+      else if (afstand <= 4) basis = 11.5;
+      else if (afstand <= 5) basis = 13;
+      else if (afstand <= 6) basis = 14.5;
+      else if (afstand <= 7) basis = 16;
+      else if (afstand <= 8) basis = 17.5;
+      else if (afstand <= 9) basis = 19;
+      else basis = 2.5 + (afstand * 1.5) + (duur * 0.50);
+
+      const weerFactor = weer.toLowerCase().includes("rain") || weer.toLowerCase().includes("snow") ? 1.10 : 1;
+      const drukteFactor = bepaalDrukteToeslag();
+      const nachtFactor = bepaalNachttoeslag();
+
+      const toeslagen = weerFactor * drukteFactor * nachtFactor;
+      const toeslagenBedrag = basis * (toeslagen - 1);
+
       berekenData = {
-        ophaaladres: document.getElementById("ophaaladres").value,
-        afzetadres: document.getElementById("afzetadres").value,
-        betaalmethode: document.getElementById("betaalmethode").value,
-        spoedToeslag: spoedToeslag,
-        kortingscode: document.getElementById("kortingscode").value
-        // Voeg hier eventueel andere parameters toe
+        basis: basis,
+        weer: weerFactor,
+        drukte: drukteFactor,
+        nacht: nachtFactor,
+        spoed: spoedToeslag,
+        toeslagenBedrag: toeslagenBedrag
       };
 
-      // Voorbeeld van prijsberekening
-      let prijs = 20 + spoedToeslag; // Basisprijs plus eventuele toeslag
+      return (basis * toeslagen) + spoedToeslag;
+    }
 
-      let resultaatDiv = document.getElementById("resultaat");
-      resultaatDiv.innerText = `Ritprijs: €${prijs.toFixed(2)}`;
+    async function berekenRit() {
+      const ophalen = document.getElementById("ophaaladres").value;
+      const afzetten = document.getElementById("afzetadres").value;
+      const tijd = document.getElementById("tijdstip").value;
+      const betaalmethode = document.getElementById("betaalmethode").value;
+
+      if (!ophalen || !afzetten) return alert("Vul beide adressen in.");
+      if (!document.getElementById("akkoord").checked) return alert("Ga akkoord met de annuleringskosten.");
+
+      try {
+        const coordOphalen = await getCoordinates(ophalen);
+        const coordAfzetten = await getCoordinates(afzetten);
+
+        const routeURL = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]}`;
+        const res = await fetch(routeURL);
+        const data = await res.json();
+
+        const afstandKm = data.features[0].properties.summary.distance / 1000;
+        const duurMin = data.features[0].properties.summary.duration / 60;
+        const weer = await getWeer(coordOphalen[1], coordOphalen[0]);
+
+        const ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
+
+        const resultText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)`;
+        document.getElementById("resultaat").innerText = resultText;
+
+        const whatsappURL = `https://wa.me/?text=${encodeURIComponent(resultText)}`;
+        document.getElementById("whatsappKnop").href = whatsappURL;
+        document.getElementById("whatsappKnop").style.display = "block";
+      } catch (e) {
+        console.error(e);
+        alert("Er ging iets mis bij het berekenen van de rit.");
+      }
     }
 
     function toonSpecificaties() {
-      const specificatiesDiv = document.getElementById("specificaties");
-      specificatiesDiv.style.display = specificatiesDiv.style.display === "none" ? "block" : "none";
-      specificatiesDiv.innerText = JSON.stringify(berekenData, null, 2);
+      const wachtwoord = prompt("Voer wachtwoord in om specificaties te bekijken:");
+      if (wachtwoord !== "Ahllen2@") {
+        alert("Onjuist wachtwoord!");
+        return;
+      }
+
+      const spec = `
+💡 Specificatie:
+• Basisprijs: €${berekenData.basis.toFixed(2)}
+• Weer factor: ${((berekenData.weer - 1) * 100).toFixed(0)}% (€${(berekenData.basis * (berekenData.weer - 1)).toFixed(2)})
+• Drukte factor: ${((berekenData.drukte - 1) * 100).toFixed(0)}% (€${(berekenData.basis * (berekenData.drukte - 1)).toFixed(2)})
+• Nacht factor: ${((berekenData.nacht - 1) * 100).toFixed(0)}% (€${(berekenData.basis * (berekenData.nacht - 1)).toFixed(2)})
+• Spoedtoeslag: €${berekenData.spoed.toFixed(2)}
+———————————————
+• Totaal toeslagen: €${berekenData.toeslagenBedrag.toFixed(2)}
+`;
+
+      document.getElementById("specificaties").innerText = spec;
+      document.getElementById("specificaties").style.display = "block";
+    }
+
+    function veranderTaal() {
+      document.getElementById("label-ophaaladres").innerText = "📍 Pickup address";
+      document.getElementById("btn-locatie").innerText = "📌 Get my location";
+      document.getElementById("label-afzetadres").innerText = "📍 Drop-off address";
+      document.getElementById("label-tijdstip").innerText = "🕒 Desired pickup time (optional)";
+      document.getElementById("label-betaalmethode").innerText = "💳 Choose payment method";
+      document.getElementById("label-kortingscode").innerText = "🎟️ Discount code (optional)";
+      document.getElementById("btn-bereken").innerText = "🚖 Calculate fare";
     }
   </script>
 </body>
