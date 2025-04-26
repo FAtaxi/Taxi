@@ -15,7 +15,7 @@
     }
     h1 {
       text-align: center;
-      color: gold;
+      color: red;
       margin-bottom: 1rem;
     }
     .container {
@@ -62,31 +62,46 @@
       width: 30px;
       cursor: pointer;
     }
+    #adminContainer {
+      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
+      background: #111; /* zelfde stijl als de andere containers */
+      border-radius: 10px;
+      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
+      height: 30px; /* zelfde hoogte als het vlaggetje */
+      cursor: pointer;
+      text-align: center; /* Centraal uitlijnen van de tekst */
+      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
+      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
+    }
   </style>
 </head>
 
 <body>
 <img id="flag" src="https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg" onclick="switchLanguage()" title="Switch to English">
 
+<div id="adminContainer" onclick="toonAdmin()" title="Beheerder">
+  🔐
+</div>
+
 <h1>FA Taxi Service</h1>
-  <h1>XXL Service 6 Personen</h1>
+<h1>TAXI 4 Personen</h1>
 
 <div class="container">
-  <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES</label>
+  <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍 </label>
   <input type="text" id="ophaaladres" placeholder="Bijv. Stationsplein 1, Amsterdam">
-  <button onclick="gebruikLocatie()" id="btnLocatie">📌 Haal mijn locatie op</button>
+  <button onclick="gebruikLocatie()" id="btnLocatie">📌 Haal mijn locatie op 📌</button>
 
-  <label for="afzetadres" id="labelAfzet">📍 AFZET ADRES</label>
+  <label for="afzetadres" id="labelAfzet">📍 AFZET ADRES 📍</label>
   <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam">
 
-  <button onclick="toggleDatum()" id="toggleDatumBtn">➕ Uw rit plannen klik hier</button>
+  <button onclick="toggleDatum()" id="toggleDatumBtn"> 📅 Uw rit plannen klik hier 📅</button>
 
   <div id="datumContainer">
-    <label for="tijdstip" id="labelTijdstip">🕒 Gewenst tijdstip (optioneel)</label>
+    <label for="tijdstip" id="labelTijdstip">🕒 Gewenst tijdstip 🕒 </label>
     <input type="datetime-local" id="tijdstip">
   </div>
 
-  <label for="betaalmethode" id="labelBetaal">💳 Kies een betaalmethode</label>
+  <label for="betaalmethode" id="labelBetaal">💳 Kies een betaalmethode 💳</label>
   <select id="betaalmethode">
     <option value="Tikkie">🔗 Tikkie (online betaallink)</option>
     <option value="Online betaallink">🌐 Online betaallink</option>
@@ -94,21 +109,20 @@
     <option value="Contant">💶 Contant</option>
   </select>
 
-  <label for="kortingscode" id="labelKorting">🎟️ Kortingscode (</label>
+  <label for="kortingscode" id="labelKorting"> 💰 Kortingscode 💰  </label>
   <input type="text" id="kortingscode" placeholder="Voer uw kortingscode in">
 
-  <button onclick="toggleSpoed()" id="spoedBtn">🚨 Voeg €10 spoedrit toe</button>
-  <input type="checkbox" id="akkoord"> 💶 Akkoord annuleringskosten €10,-
+  <button onclick="toggleSpoed()" id="spoedBtn">🚀 Voeg €10 spoedrit toe 🚀</button>
+  <input type="checkbox" id="akkoord"> 🚨 Akkoord annuleringskosten 🚨 €10,-
 
-  <button onclick="berekenRit()" id="btnBereken">🚖 Bereken ritprijs</button>
+  <button onclick="berekenRit()" id="btnBereken">🚖 Bereken ritprijs 🚖</button>
 
   <div id="resultaat"></div>
 
-  <button onclick="toonAdmin()" style="margin-top:1rem;">🔐 Beheerder</button>
   <div id="adminSpecificaties" style="display:none;"></div>
 
   <a id="whatsappKnop" href="#" target="_blank" style="display:none;">
-    <button>📩 Bevestig & Verstuur naar WhatsApp</button>
+    <button>📩 Bevestig & Verstuur naar WhatsApp 📩</button>
   </a>
 </div>
 
