@@ -177,7 +177,7 @@
       else if (afstand <= 7) basis = 25;
       else if (afstand <= 8) basis = 27.5;
       else if (afstand <= 9) basis = 30;
-      else basis = 3.5 + (afstand * 1.5) + (duur * 0.50);
+      else basis = 3.5 + (afstand * 2.5) + (duur * 0.50);
 
       const weerFactor = weer.toLowerCase().includes("rain") || weer.toLowerCase().includes("snow") ? 1.10 : 1;
       const drukteFactor = bepaalDrukteToeslag();
