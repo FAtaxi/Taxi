@@ -62,14 +62,29 @@
       width: 30px;
       cursor: pointer;
     }
+    #adminContainer {
+      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
+      background: #111; /* zelfde stijl als de andere containers */
+      border-radius: 10px;
+      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
+      height: 30px; /* zelfde hoogte als het vlaggetje */
+      cursor: pointer;
+      text-align: center; /* Centraal uitlijnen van de tekst */
+      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
+      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
+    }
   </style>
 </head>
 
 <body>
 <img id="flag" src="https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg" onclick="switchLanguage()" title="Switch to English">
 
+<div id="adminContainer" onclick="toonAdmin()" title="Beheerder">
+  🔐
+</div>
+
 <h1>FA Taxi Service</h1>
-  <h1>TAXI 4 Personen</h1>
+<h1>TAXI 4 Personen</h1>
 
 <div class="container">
   <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍 </label>
@@ -104,7 +119,6 @@
 
   <div id="resultaat"></div>
 
-  <button onclick="toonAdmin()" style="margin-top:1rem;">🔐 Beheerder 🔐</button>
   <div id="adminSpecificaties" style="display:none;"></div>
 
   <a id="whatsappKnop" href="#" target="_blank" style="display:none;">
