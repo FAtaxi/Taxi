@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="nl">
-<head> 
+<head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FA Taxi Boeking</title>
   <style>
     body {
@@ -63,15 +63,32 @@
       cursor: pointer;
     }
     #adminContainer {
-      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
-      background: #111; /* zelfde stijl als de andere containers */
+      display: inline-block;
+      background: #111;
       border-radius: 10px;
-      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
-      height: 30px; /* zelfde hoogte als het vlaggetje */
+      width: 30px;
+      height: 30px;
       cursor: pointer;
-      text-align: center; /* Centraal uitlijnen van de tekst */
-      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
-      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
+      text-align: center;
+      padding-top: 5px;
+      margin-left: 5px;
+    }
+    /* Suggestie container */
+    .suggestion {
+      background: #222;
+      border: 1px solid #444;
+      z-index: 100;
+      position: absolute;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .suggestion div {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .suggestion div:hover {
+      background: #444;
     }
   </style>
 </head>
@@ -92,7 +109,8 @@
   <button onclick="gebruikLocatie()" id="btnLocatie">📌 Haal mijn locatie op 📌</button>
 
   <label for="afzetadres" id="labelAfzet">📍 AFZET ADRES 📍</label>
-  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam">
+  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam" oninput="autocompleteAfzet()">
+  <div id="suggesties" class="suggestion" style="display:none;"></div>
 
   <button onclick="toggleDatum()" id="toggleDatumBtn"> 📅 Uw rit plannen klik hier 📅</button>
 
@@ -129,7 +147,8 @@
 <script>
 let spoedToeslag = 0;
 let adminData = {};
-const weatherApiKey = "9d1afafb80f94518850212856252004";
+const weatherApiKey = "9d1afafb80f94518850212856252004"; // Jouw weer API sleutel
+const opencageApiKey = "22f9046cc2b242a3a5f08cfabc005f78"; // Jouw OpenCage API sleutel
 
 function toggleSpoed() {
   spoedToeslag = spoedToeslag === 0 ? 10 : 0;
@@ -147,7 +166,7 @@ async function gebruikLocatie() {
   if (!navigator.geolocation) return alert("Locatie niet ondersteund.");
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = pos.coords.latitude, lon = pos.coords.longitude;
-    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=22f9046cc2b242a3a5f08cfabc005f78`;
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${opencageApiKey}`;
     const res = await fetch(url);
     const data = await res.json();
     document.getElementById("ophaaladres").value = data.results[0].formatted;
@@ -155,12 +174,45 @@ async function gebruikLocatie() {
 }
 
 async function getCoordinates(adres) {
-  const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=22f9046cc2b242a3a5f08cfabc005f78`;
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=${opencageApiKey}`;
   const res = await fetch(url);
   const data = await res.json();
   if (data.results.length === 0) throw new Error("Geen locatie gevonden.");
   const { lat, lng } = data.results[0].geometry;
   return [lng, lat];
+}
+
+function autocompleteAfzet() {
+  const input = document.getElementById('afzetadres').value;
+  const suggestieContainer = document.getElementById('suggesties');
+
+  if (input.length < 2) {
+    suggestieContainer.style.display = 'none';
+    return;
+  }
+
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(input)}&key=${opencageApiKey}&limit=5`;
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      suggestieContainer.innerHTML = '';
+      if (data.results.length > 0) {
+        data.results.forEach(result => {
+          const div = document.createElement('div');
+          div.innerText = result.formatted;
+          div.onclick = () => selectSuggestie(result.formatted);
+          suggestieContainer.appendChild(div);
+        });
+        suggestieContainer.style.display = 'block';
+      } else {
+        suggestieContainer.style.display = 'none';
+      }
+    });
+}
+
+function selectSuggestie(suggestie) {
+  document.getElementById('afzetadres').value = suggestie;
+  document.getElementById('suggesties').style.display = 'none';
 }
 
 async function getWeer(lat, lon) {
