@@ -69,7 +69,7 @@
 <img id="flag" src="https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg" onclick="switchLanguage()" title="Switch to English">
 
 <h1>FA Taxi Service</h1>
-  <h1>TAXI 4 Pers</h1>
+  <h1>TAXI 4 Personen</h1>
 
 <div class="container">
   <label for="ophaaladres" id="labelOphaal">📍 Ophaaladres</label>
@@ -104,7 +104,7 @@
 
   <div id="resultaat"></div>
 
-  <button onclick="toonAdmin()" style="margin-top:1rem;">🔐 Admin Specificaties</button>
+  <button onclick="toonAdmin()" style="margin-top:1rem;">🔐 Beheerder Specificaties</button>
   <div id="adminSpecificaties" style="display:none;"></div>
 
   <a id="whatsappKnop" href="#" target="_blank" style="display:none;">
@@ -125,13 +125,8 @@ function toggleSpoed() {
 function toggleDatum() {
   const datumContainer = document.getElementById('datumContainer');
   const toggleBtn = document.getElementById('toggleDatumBtn');
-  if (datumContainer.style.display === 'none') {
-    datumContainer.style.display = 'block';
-    toggleBtn.innerText = '➖ Verberg datum/tijd';
-  } else {
-    datumContainer.style.display = 'none';
-    toggleBtn.innerText = '➕ Voeg datum/tijd toe';
-  }
+  datumContainer.style.display = datumContainer.style.display === 'none' ? 'block' : 'none';
+  toggleBtn.innerText = datumContainer.style.display === 'none' ? "➕ Voeg datum/tijd toe" : "➖ Verberg datum/tijd";
 }
 
 async function gebruikLocatie() {
@@ -168,9 +163,7 @@ async function getWeer(lat, lon) {
 function bepaalDrukteToeslag() {
   const u = new Date().getHours();
   const d = new Date().getDay();
-  if ((u >= 7 && u <= 9) || (u >= 16 && u <= 18)) return 1.15;
-  if (d === 0 || d === 6) return 1.15;
-  return 1;
+  return ((u >= 7 && u <= 9) || (u >= 16 && u <= 18) || d === 0 || d === 6) ? 1.15 : 1;
 }
 
 function bepaalNachttoeslag() {
@@ -187,34 +180,49 @@ function berekenRitprijs(afstand, duur, weer) {
   else if (afstand <= 7) basis = 16;
   else if (afstand <= 8) basis = 17.5;
   else if (afstand <= 9) basis = 19;
-  else basis = 2.5 + (afstand * 1.5) + (duur * 0.50);
+  else basis = 2.5 + (afstand * 1.5) + (duur * 0.5);
 
-  let toeslag = 1;
-  if (weer.toLowerCase().includes("patchy rain")) toeslag *= 1.05;
-  else if (weer.toLowerCase().includes("light rain")) toeslag *= 1.10;
-  else if (weer.toLowerCase().includes("moderate rain")) toeslag *= 1.15;
-  else if (weer.toLowerCase().includes("heavy rain")) toeslag *= 1.20;
-  else if (weer.toLowerCase().includes("torrential rain")) toeslag *= 1.25;
-  else if (weer.toLowerCase().includes("thunderstorm")) toeslag *= 1.25;
-  else if (weer.toLowerCase().includes("snow")) toeslag *= 1.25;
+  let weerToeslag = 1;
+  if (weer.toLowerCase().includes("patchy rain")) weerToeslag = 1.05;
+  else if (weer.toLowerCase().includes("light rain")) weerToeslag = 1.10;
+  else if (weer.toLowerCase().includes("moderate rain")) weerToeslag = 1.15;
+  else if (weer.toLowerCase().includes("heavy rain")) weerToeslag = 1.20;
+  else if (weer.toLowerCase().includes("torrential rain")) weerToeslag = 1.25;
+  else if (weer.toLowerCase().includes("thunderstorm")) weerToeslag = 1.25;
+  else if (weer.toLowerCase().includes("snow")) weerToeslag = 1.25;
 
-  toeslag *= bepaalDrukteToeslag();
-  toeslag *= bepaalNachttoeslag();
+  const drukte = bepaalDrukteToeslag();
+  const nacht = bepaalNachttoeslag();
 
-  adminData = { basis, toeslag, spoed: spoedToeslag };
-  return basis * toeslag + spoedToeslag;
+  const prijsNaToeslagen = basis * weerToeslag * drukte * nacht;
+
+  adminData = {
+    basis,
+    weerProcent: ((weerToeslag - 1) * 100).toFixed(0),
+    weerEuro: (basis * (weerToeslag - 1)).toFixed(2),
+    drukteProcent: ((drukte - 1) * 100).toFixed(0),
+    drukteEuro: (basis * (drukte - 1)).toFixed(2),
+    nachtProcent: ((nacht - 1) * 100).toFixed(0),
+    nachtEuro: (basis * (nacht - 1)).toFixed(2),
+    spoed: spoedToeslag,
+    korting: 0,
+    kortingBedrag: 0
+  };
+
+  return prijsNaToeslagen + spoedToeslag;
 }
 
 function pasKortingscodeToe(ritprijs) {
-  const kortingscode = document.getElementById("kortingscode").value.trim();
-  let kortingPercentage = 0;
-  if (kortingscode === "KORTING10") kortingPercentage = 10;
-  else if (kortingscode === "FATS20") kortingPercentage = 20;
-  else if (kortingscode === "FATS25") kortingPercentage = 25;
-  else if (kortingscode === "FATS30") kortingPercentage = 30;
+  const code = document.getElementById("kortingscode").value.trim();
+  let perc = 0;
+  if (code === "KORTING10") perc = 10;
+  else if (code === "FATS20") perc = 20;
+  else if (code === "FATS25") perc = 25;
+  else if (code === "FATS30") perc = 30;
 
-  adminData.korting = kortingPercentage;
-  return ritprijs * (1 - kortingPercentage / 100);
+  adminData.korting = perc;
+  adminData.kortingBedrag = (ritprijs * (perc / 100)).toFixed(2);
+  return ritprijs * (1 - perc / 100);
 }
 
 async function berekenRit() {
@@ -223,46 +231,40 @@ async function berekenRit() {
   const tijd = document.getElementById("tijdstip").value;
   const betaalmethode = document.getElementById("betaalmethode").value;
 
-  if (!ophalen || !afzetten) return alert("Vul beide adressen in.");
-  if (!document.getElementById("akkoord").checked) return alert("Ga akkoord met de annuleringskosten.");
+  if (!ophalen || !afzetten || !document.getElementById("akkoord").checked)
+    return alert("Vul alles correct in en ga akkoord met de voorwaarden.");
 
-  try {
-    const coordOphalen = await getCoordinates(ophalen);
-    const coordAfzetten = await getCoordinates(afzetten);
-    const routeURL = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]}`;
-    const res = await fetch(routeURL);
-    const data = await res.json();
+  const coordOphalen = await getCoordinates(ophalen);
+  const coordAfzetten = await getCoordinates(afzetten);
+  const routeURL = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]}`;
+  const res = await fetch(routeURL);
+  const data = await res.json();
 
-    const afstandKm = data.features[0].properties.summary.distance / 1000;
-    const duurMin = data.features[0].properties.summary.duration / 60;
-    const weer = await getWeer(coordOphalen[1], coordOphalen[0]);
+  const afstandKm = data.features[0].properties.summary.distance / 1000;
+  const duurMin = data.features[0].properties.summary.duration / 60;
+  const weer = await getWeer(coordOphalen[1], coordOphalen[0]);
 
-    let ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
-    ritprijs = pasKortingscodeToe(ritprijs);
+  let ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
+  ritprijs = pasKortingscodeToe(ritprijs);
 
-    document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)`;
+  document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag}`;
 
-    const whatsappURL = `https://wa.me/?text=${encodeURIComponent(document.getElementById("resultaat").innerText)}`;
-    const link = document.getElementById("whatsappKnop");
-    link.href = whatsappURL;
-    link.style.display = "block";
-  } catch (e) {
-    console.error(e);
-    alert("Er ging iets mis bij het berekenen van de rit.");
-  }
+  const bericht = `📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText}`;
+  document.getElementById("whatsappKnop").href = `https://wa.me/3147972301?text=${encodeURIComponent(bericht)}`;
+  document.getElementById("whatsappKnop").style.display = "block";
 }
 
 function toonAdmin() {
-  const wachtwoord = prompt("Voer admin wachtwoord in:");
-  if (wachtwoord !== "Ahllen2@") {
-    alert("Onjuist wachtwoord!");
-    return;
-  }
-  const spec = `Admin Specificaties:
+  const wachtwoord = prompt("Voer wachtwoord in:");
+  if (wachtwoord !== "Ahllen2@") return alert("Onjuist wachtwoord!");
+
+  const spec = `📊 Beheerder Specificatie:
 - Basisprijs: €${adminData.basis}
-- Totale toeslagen: ${(adminData.toeslag * 100 - 100).toFixed(0)}%
+- Weer: ${adminData.weerProcent}% (€${adminData.weerEuro})
+- Drukte: ${adminData.drukteProcent}% (€${adminData.drukteEuro})
+- Nacht: ${adminData.nachtProcent}% (€${adminData.nachtEuro})
 - Spoedtoeslag: €${adminData.spoed}
-- Korting: ${adminData.korting || 0}%
+- Korting: ${adminData.korting}% (€${adminData.kortingBedrag})
 `;
   document.getElementById("adminSpecificaties").innerText = spec;
   document.getElementById("adminSpecificaties").style.display = "block";
