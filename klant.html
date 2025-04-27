@@ -63,15 +63,15 @@
       cursor: pointer;
     }
     #adminContainer {
-      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
-      background: #111; /* zelfde stijl als de andere containers */
+      display: inline-block;
+      background: #111;
       border-radius: 10px;
-      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
-      height: 30px; /* zelfde hoogte als het vlaggetje */
+      width: 30px;
+      height: 30px;
       cursor: pointer;
-      text-align: center; /* Centraal uitlijnen van de tekst */
-      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
-      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
+      text-align: center;
+      padding-top: 5px;
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -109,11 +109,17 @@
     <option value="Contant">💶 Contant</option>
   </select>
 
-  <label for="kortingscode" id="labelKorting"> 💰 Kortingscode 💰  </label>
+  <label for="kortingscode" id="labelKorting"> 💰 Kortingscode 💰 </label>
   <input type="text" id="kortingscode" placeholder="Voer uw kortingscode in">
+
+  <label for="huisdieren">🐾 Huisdieren meenemen?</label>
+  <input type="checkbox" id="huisdieren"> Ja (+€5)
 
   <button onclick="toggleSpoed()" id="spoedBtn">🚀 Voeg €10 spoedrit toe 🚀</button>
   <input type="checkbox" id="akkoord"> 🚨 Akkoord annuleringskosten 🚨 €10,-
+
+  <label for="opmerkingen">📝 Opmerkingen:</label>
+  <textarea id="opmerkingen" placeholder="Voeg hier uw opmerkingen toe..."></textarea>
 
   <button onclick="berekenRit()" id="btnBereken">🚖 Bereken ritprijs 🚖</button>
 
@@ -207,6 +213,9 @@ function berekenRitprijs(afstand, duur, weer) {
 
   const drukte = bepaalDrukteToeslag();
   const nacht = bepaalNachttoeslag();
+  
+  // Controleer of huisdieren zijn geselecteerd en voeg €5 toe
+  const huisdierenToeslag = document.getElementById("huisdieren").checked ? 5 : 0;
 
   const prijsNaToeslagen = basis * weerToeslag * drukte * nacht;
 
@@ -223,7 +232,7 @@ function berekenRitprijs(afstand, duur, weer) {
     kortingBedrag: 0
   };
 
-  return prijsNaToeslagen + spoedToeslag;
+  return prijsNaToeslagen + spoedToeslag + huisdierenToeslag; // Voeg huisdierenToeslag toe
 }
 
 function pasKortingscodeToe(ritprijs) {
@@ -261,10 +270,14 @@ async function berekenRit() {
   let ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
   ritprijs = pasKortingscodeToe(ritprijs);
 
-  document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag}`;
+  // Toevoegen van opmerkingen
+  const opmerkingen = document.getElementById("opmerkingen").value;
+  const opmerkingenString = opmerkingen ? `\n📝 Opmerkingen: ${opmerkingen}` : '';
+
+  document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag}${opmerkingenString}`;
 
   const bericht = `📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText}`;
-  document.getElementById("whatsappKnop").href = `https://wa.me/3147972301?text=${encodeURIComponent(bericht)}`;
+  document.getElementById("whatsappKnop").href = `https://wa.me/message/WPXHSY3TEYVPA1?text=${encodeURIComponent(bericht)}`;  // Nieuwe WhatsApp link
   document.getElementById("whatsappKnop").style.display = "block";
 }
 
