@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="nl">
-<head>
+<head> 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title>FA Taxi Boeking</title>
   <style>
     body {
@@ -63,32 +63,15 @@
       cursor: pointer;
     }
     #adminContainer {
-      display: inline-block;
-      background: #111;
+      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
+      background: #111; /* zelfde stijl als de andere containers */
       border-radius: 10px;
-      width: 30px;
-      height: 30px;
+      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
+      height: 30px; /* zelfde hoogte als het vlaggetje */
       cursor: pointer;
-      text-align: center;
-      padding-top: 5px;
-      margin-left: 5px;
-    }
-    /* Suggestie container */
-    .suggestion {
-      background: #222;
-      border: 1px solid #444;
-      z-index: 100;
-      position: absolute;
-      width: 100%;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    .suggestion div {
-      padding: 10px;
-      cursor: pointer;
-    }
-    .suggestion div:hover {
-      background: #444;
+      text-align: center; /* Centraal uitlijnen van de tekst */
+      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
+      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
     }
   </style>
 </head>
@@ -101,7 +84,7 @@
 </div>
 
 <h1>FA Taxi Service</h1>
-<h1>TAXI 4 Personen</h1>
+<h1>XXL Service 6 Personen</h1>
 
 <div class="container">
   <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍 </label>
@@ -109,8 +92,7 @@
   <button onclick="gebruikLocatie()" id="btnLocatie">📌 Haal mijn locatie op 📌</button>
 
   <label for="afzetadres" id="labelAfzet">📍 AFZET ADRES 📍</label>
-  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam" oninput="autocompleteAfzet()">
-  <div id="suggesties" class="suggestion" style="display:none;"></div>
+  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam">
 
   <button onclick="toggleDatum()" id="toggleDatumBtn"> 📅 Uw rit plannen klik hier 📅</button>
 
@@ -147,8 +129,7 @@
 <script>
 let spoedToeslag = 0;
 let adminData = {};
-const weatherApiKey = "9d1afafb80f94518850212856252004"; // Jouw weer API sleutel
-const opencageApiKey = "22f9046cc2b242a3a5f08cfabc005f78"; // Jouw OpenCage API sleutel
+const weatherApiKey = "9d1afafb80f94518850212856252004";
 
 function toggleSpoed() {
   spoedToeslag = spoedToeslag === 0 ? 10 : 0;
@@ -166,7 +147,7 @@ async function gebruikLocatie() {
   if (!navigator.geolocation) return alert("Locatie niet ondersteund.");
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = pos.coords.latitude, lon = pos.coords.longitude;
-    const url = https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${opencageApiKey};
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=22f9046cc2b242a3a5f08cfabc005f78`;
     const res = await fetch(url);
     const data = await res.json();
     document.getElementById("ophaaladres").value = data.results[0].formatted;
@@ -174,7 +155,7 @@ async function gebruikLocatie() {
 }
 
 async function getCoordinates(adres) {
-  const url = https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=${opencageApiKey};
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=22f9046cc2b242a3a5f08cfabc005f78`;
   const res = await fetch(url);
   const data = await res.json();
   if (data.results.length === 0) throw new Error("Geen locatie gevonden.");
@@ -182,42 +163,9 @@ async function getCoordinates(adres) {
   return [lng, lat];
 }
 
-function autocompleteAfzet() {
-  const input = document.getElementById('afzetadres').value;
-  const suggestieContainer = document.getElementById('suggesties');
-
-  if (input.length < 2) {
-    suggestieContainer.style.display = 'none';
-    return;
-  }
-
-  const url = https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(input)}&key=${opencageApiKey}&limit=5;
-  fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      suggestieContainer.innerHTML = '';
-      if (data.results.length > 0) {
-        data.results.forEach(result => {
-          const div = document.createElement('div');
-          div.innerText = result.formatted;
-          div.onclick = () => selectSuggestie(result.formatted);
-          suggestieContainer.appendChild(div);
-        });
-        suggestieContainer.style.display = 'block';
-      } else {
-        suggestieContainer.style.display = 'none';
-      }
-    });
-}
-
-function selectSuggestie(suggestie) {
-  document.getElementById('afzetadres').value = suggestie;
-  document.getElementById('suggesties').style.display = 'none';
-}
-
 async function getWeer(lat, lon) {
   try {
-    const url = https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${lat},${lon};
+    const url = `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${lat},${lon}`;
     const res = await fetch(url);
     const data = await res.json();
     return data.current?.condition?.text || "";
@@ -239,14 +187,14 @@ function bepaalNachttoeslag() {
 
 function berekenRitprijs(afstand, duur, weer) {
   let basis = 0;
-  if (afstand <= 3) basis = 10;
-  else if (afstand <= 4) basis = 11.5;
-  else if (afstand <= 5) basis = 13;
-  else if (afstand <= 6) basis = 14.5;
-  else if (afstand <= 7) basis = 16;
-  else if (afstand <= 8) basis = 17.5;
-  else if (afstand <= 9) basis = 19;
-  else basis = 2.5 + (afstand * 1.5) + (duur * 0.5);
+  if (afstand <= 3) basis = 15;
+  else if (afstand <= 4) basis = 17.5;
+  else if (afstand <= 5) basis = 20;
+  else if (afstand <= 6) basis = 22.5;
+  else if (afstand <= 7) basis = 25;
+  else if (afstand <= 8) basis = 27.5;
+  else if (afstand <= 9) basis = 30;
+  else basis = 3.5 + (afstand * 2.5) + (duur * 0.5);
 
   let weerToeslag = 1;
   if (weer.toLowerCase().includes("patchy rain")) weerToeslag = 1.05;
@@ -302,7 +250,7 @@ async function berekenRit() {
 
   const coordOphalen = await getCoordinates(ophalen);
   const coordAfzetten = await getCoordinates(afzetten);
-  const routeURL = https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]};
+  const routeURL = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]}`;
   const res = await fetch(routeURL);
   const data = await res.json();
 
@@ -313,10 +261,10 @@ async function berekenRit() {
   let ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
   ritprijs = pasKortingscodeToe(ritprijs);
 
-  document.getElementById("resultaat").innerText = 🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag};
+  document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag}`;
 
-  const bericht = 📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText};
-  document.getElementById("whatsappKnop").href = https:https://wa.me/WPXHSY3TEYVPA1?text=${encodeURIComponent(bericht)};
+  const bericht = `📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText}`;
+  document.getElementById("whatsappKnop").href = `https://wa.me/31647972301?text=${encodeURIComponent(bericht)}`;
   document.getElementById("whatsappKnop").style.display = "block";
 }
 
@@ -324,14 +272,14 @@ function toonAdmin() {
   const wachtwoord = prompt("Voer wachtwoord in:");
   if (wachtwoord !== "Ahllen2@") return alert("Onjuist wachtwoord!");
 
-  const spec = 📊 Beheerder:
+  const spec = `📊 Beheerder:
 - Basisprijs: €${adminData.basis}
 - Weer: ${adminData.weerProcent}% (€${adminData.weerEuro})
 - Drukte: ${adminData.drukteProcent}% (€${adminData.drukteEuro})
 - Nacht: ${adminData.nachtProcent}% (€${adminData.nachtEuro})
 - Spoedtoeslag: €${adminData.spoed}
 - Korting: ${adminData.korting}% (€${adminData.kortingBedrag})
-;
+`;
   document.getElementById("adminSpecificaties").innerText = spec;
   document.getElementById("adminSpecificaties").style.display = "block";
 }
