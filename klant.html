@@ -73,6 +73,23 @@
       padding-top: 5px;
       margin-left: 5px;
     }
+    /* Suggestie container */
+    .suggestion {
+      background: #222;
+      border: 1px solid #444;
+      z-index: 100;
+      position: absolute;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .suggestion div {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .suggestion div:hover {
+      background: #444;
+    }
   </style>
 </head>
 
@@ -87,17 +104,18 @@
 <h1>TAXI 4 Personen</h1>
 
 <div class="container">
-  <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍</label>
+  <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍 </label>
   <input type="text" id="ophaaladres" placeholder="Bijv. Stationsplein 1, Amsterdam">
   <button onclick="gebruikLocatie()" id="btnLocatie">📌 Haal mijn locatie op 📌</button>
 
   <label for="afzetadres" id="labelAfzet">📍 AFZET ADRES 📍</label>
-  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam">
+  <input type="text" id="afzetadres" placeholder="Bijv. Damrak 50, Amsterdam" oninput="autocompleteAfzet()">
+  <div id="suggesties" class="suggestion" style="display:none;"></div>
 
-  <button onclick="toggleDatum()" id="toggleDatumBtn">📅 Uw rit plannen klik hier 📅</button>
+  <button onclick="toggleDatum()" id="toggleDatumBtn"> 📅 Uw rit plannen klik hier 📅</button>
 
   <div id="datumContainer">
-    <label for="tijdstip" id="labelTijdstip">🕒 Gewenst tijdstip 🕒</label>
+    <label for="tijdstip" id="labelTijdstip">🕒 Gewenst tijdstip 🕒 </label>
     <input type="datetime-local" id="tijdstip">
   </div>
 
@@ -109,7 +127,7 @@
     <option value="Contant">💶 Contant</option>
   </select>
 
-  <label for="kortingscode" id="labelKorting">💰 Kortingscode 💰</label>
+  <label for="kortingscode" id="labelKorting"> 💰 Kortingscode 💰  </label>
   <input type="text" id="kortingscode" placeholder="Voer uw kortingscode in">
 
   <button onclick="toggleSpoed()" id="spoedBtn">🚀 Voeg €10 spoedrit toe 🚀</button>
@@ -129,27 +147,26 @@
 <script>
 let spoedToeslag = 0;
 let adminData = {};
-const weatherApiKey = "9d1afafb80f94518850212856252004";
-const opencageApiKey = "22f9046cc2b242a3a5f08cfabc005f78";
+const weatherApiKey = "9d1afafb80f94518850212856252004"; // Jouw weer API sleutel
+const opencageApiKey = "22f9046cc2b242a3a5f08cfabc005f78"; // Jouw OpenCage API sleutel
 
 function toggleSpoed() {
   spoedToeslag = spoedToeslag === 0 ? 10 : 0;
-  document.getElementById('spoedBtn').innerText = spoedToeslag === 0 ? "🚀 Voeg €10 spoedrit toe 🚀" : "✅ Spoedrit toegevoegd (€10)";
+  document.getElementById('spoedBtn').innerText = spoedToeslag === 0 ? "🚨 Voeg €10 spoedrit toe" : "✅ Spoedrit toegevoegd (€10)";
 }
 
 function toggleDatum() {
-  const container = document.getElementById('datumContainer');
-  container.style.display = container.style.display === 'none' ? 'block' : 'none';
-  document.getElementById('toggleDatumBtn').innerText = container.style.display === 'none'
-    ? "📅 Uw rit plannen klik hier 📅"
-    : "➖ Verberg datum/tijd";
+  const datumContainer = document.getElementById('datumContainer');
+  const toggleBtn = document.getElementById('toggleDatumBtn');
+  datumContainer.style.display = datumContainer.style.display === 'none' ? 'block' : 'none';
+  toggleBtn.innerText = datumContainer.style.display === 'none' ? "➕ Voeg datum/tijd toe" : "➖ Verberg datum/tijd";
 }
 
 async function gebruikLocatie() {
   if (!navigator.geolocation) return alert("Locatie niet ondersteund.");
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = pos.coords.latitude, lon = pos.coords.longitude;
-    const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${opencageApiKey}`;
+    const url = https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${opencageApiKey};
     const res = await fetch(url);
     const data = await res.json();
     document.getElementById("ophaaladres").value = data.results[0].formatted;
@@ -157,7 +174,7 @@ async function gebruikLocatie() {
 }
 
 async function getCoordinates(adres) {
-  const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=${opencageApiKey}`;
+  const url = https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(adres)}&key=${opencageApiKey};
   const res = await fetch(url);
   const data = await res.json();
   if (data.results.length === 0) throw new Error("Geen locatie gevonden.");
@@ -165,9 +182,42 @@ async function getCoordinates(adres) {
   return [lng, lat];
 }
 
+function autocompleteAfzet() {
+  const input = document.getElementById('afzetadres').value;
+  const suggestieContainer = document.getElementById('suggesties');
+
+  if (input.length < 2) {
+    suggestieContainer.style.display = 'none';
+    return;
+  }
+
+  const url = https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(input)}&key=${opencageApiKey}&limit=5;
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      suggestieContainer.innerHTML = '';
+      if (data.results.length > 0) {
+        data.results.forEach(result => {
+          const div = document.createElement('div');
+          div.innerText = result.formatted;
+          div.onclick = () => selectSuggestie(result.formatted);
+          suggestieContainer.appendChild(div);
+        });
+        suggestieContainer.style.display = 'block';
+      } else {
+        suggestieContainer.style.display = 'none';
+      }
+    });
+}
+
+function selectSuggestie(suggestie) {
+  document.getElementById('afzetadres').value = suggestie;
+  document.getElementById('suggesties').style.display = 'none';
+}
+
 async function getWeer(lat, lon) {
   try {
-    const url = `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${lat},${lon}`;
+    const url = https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${lat},${lon};
     const res = await fetch(url);
     const data = await res.json();
     return data.current?.condition?.text || "";
@@ -199,13 +249,31 @@ function berekenRitprijs(afstand, duur, weer) {
   else basis = 2.5 + (afstand * 1.5) + (duur * 0.5);
 
   let weerToeslag = 1;
-  if (weer.toLowerCase().includes("rain") || weer.toLowerCase().includes("snow")) weerToeslag = 1.10;
+  if (weer.toLowerCase().includes("patchy rain")) weerToeslag = 1.05;
+  else if (weer.toLowerCase().includes("light rain")) weerToeslag = 1.10;
+  else if (weer.toLowerCase().includes("moderate rain")) weerToeslag = 1.15;
+  else if (weer.toLowerCase().includes("heavy rain")) weerToeslag = 1.20;
+  else if (weer.toLowerCase().includes("torrential rain")) weerToeslag = 1.25;
+  else if (weer.toLowerCase().includes("thunderstorm")) weerToeslag = 1.25;
+  else if (weer.toLowerCase().includes("snow")) weerToeslag = 1.25;
 
   const drukte = bepaalDrukteToeslag();
   const nacht = bepaalNachttoeslag();
+
   const prijsNaToeslagen = basis * weerToeslag * drukte * nacht;
 
-  adminData = { basis, spoed: spoedToeslag };
+  adminData = {
+    basis,
+    weerProcent: ((weerToeslag - 1) * 100).toFixed(0),
+    weerEuro: (basis * (weerToeslag - 1)).toFixed(2),
+    drukteProcent: ((drukte - 1) * 100).toFixed(0),
+    drukteEuro: (basis * (drukte - 1)).toFixed(2),
+    nachtProcent: ((nacht - 1) * 100).toFixed(0),
+    nachtEuro: (basis * (nacht - 1)).toFixed(2),
+    spoed: spoedToeslag,
+    korting: 0,
+    kortingBedrag: 0
+  };
 
   return prijsNaToeslagen + spoedToeslag;
 }
@@ -218,6 +286,8 @@ function pasKortingscodeToe(ritprijs) {
   else if (code === "FATS25") perc = 25;
   else if (code === "FATS30") perc = 30;
 
+  adminData.korting = perc;
+  adminData.kortingBedrag = (ritprijs * (perc / 100)).toFixed(2);
   return ritprijs * (1 - perc / 100);
 }
 
@@ -232,24 +302,38 @@ async function berekenRit() {
 
   const coordOphalen = await getCoordinates(ophalen);
   const coordAfzetten = await getCoordinates(afzetten);
+  const routeURL = https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248b59dc263cab24bdabda48748cd9122b3&start=${coordOphalen[0]},${coordOphalen[1]}&end=${coordAfzetten[0]},${coordAfzetten[1]};
+  const res = await fetch(routeURL);
+  const data = await res.json();
 
-  const afstandKm = coordAfzetten[0] - coordOphalen[0];
-  const duurMin = 10; // voorbeeld
+  const afstandKm = data.features[0].properties.summary.distance / 1000;
+  const duurMin = data.features[0].properties.summary.duration / 60;
   const weer = await getWeer(coordOphalen[1], coordOphalen[0]);
 
   let ritprijs = berekenRitprijs(afstandKm, duurMin, weer);
   ritprijs = pasKortingscodeToe(ritprijs);
 
-  document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\n💳 Betaalmethode: ${betaalmethode}`;
+  document.getElementById("resultaat").innerText = 🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag};
 
-  document.getElementById("whatsappKnop").href = `https://wa.me/message/WPXHSY3TEYVPA1`;
+  const bericht = 📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText};
+  document.getElementById("whatsappKnop").href = https:https://wa.me/WPXHSY3TEYVPA1?text=${encodeURIComponent(bericht)};
   document.getElementById("whatsappKnop").style.display = "block";
 }
 
 function toonAdmin() {
   const wachtwoord = prompt("Voer wachtwoord in:");
   if (wachtwoord !== "Ahllen2@") return alert("Onjuist wachtwoord!");
-  alert("Welkom Beheerder!");
+
+  const spec = 📊 Beheerder:
+- Basisprijs: €${adminData.basis}
+- Weer: ${adminData.weerProcent}% (€${adminData.weerEuro})
+- Drukte: ${adminData.drukteProcent}% (€${adminData.drukteEuro})
+- Nacht: ${adminData.nachtProcent}% (€${adminData.nachtEuro})
+- Spoedtoeslag: €${adminData.spoed}
+- Korting: ${adminData.korting}% (€${adminData.kortingBedrag})
+;
+  document.getElementById("adminSpecificaties").innerText = spec;
+  document.getElementById("adminSpecificaties").style.display = "block";
 }
 
 function switchLanguage() {
