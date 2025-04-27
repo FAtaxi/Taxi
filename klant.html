@@ -1,3 +1,4 @@
+reserve klant.html
 <!DOCTYPE html>
 <html lang="nl">
 <head> 
@@ -15,7 +16,7 @@
     }
     h1 {
       text-align: center;
-      color: red;
+      color: gold;
       margin-bottom: 1rem;
     }
     .container {
@@ -62,29 +63,14 @@
       width: 30px;
       cursor: pointer;
     }
-    #adminContainer {
-      display: inline-block; /* Dit zorgt ervoor dat het naast het vlaggetje komt. */
-      background: #111; /* zelfde stijl als de andere containers */
-      border-radius: 10px;
-      width: 30px; /* De breedte van de container kan ook dienen als de hoogte van het vlaggetje */
-      height: 30px; /* zelfde hoogte als het vlaggetje */
-      cursor: pointer;
-      text-align: center; /* Centraal uitlijnen van de tekst */
-      padding-top: 5px; /* Klein beetje ruimte bovenin de tekst */
-      margin-left: 5px; /* Ruimte tussen vlaggetje en beheerder container */
-    }
   </style>
 </head>
 
 <body>
 <img id="flag" src="https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg" onclick="switchLanguage()" title="Switch to English">
 
-<div id="adminContainer" onclick="toonAdmin()" title="Beheerder">
-  🔐
-</div>
-
 <h1>FA Taxi Service</h1>
-<h1>XXL Service 6 Personen</h1>
+  <h1>TAXI 4 Personen</h1>
 
 <div class="container">
   <label for="ophaaladres" id="labelOphaal">📍 OPHAAL ADRES 📍 </label>
@@ -119,6 +105,7 @@
 
   <div id="resultaat"></div>
 
+  <button onclick="toonAdmin()" style="margin-top:1rem;">🔐 Beheerder 🔐</button>
   <div id="adminSpecificaties" style="display:none;"></div>
 
   <a id="whatsappKnop" href="#" target="_blank" style="display:none;">
@@ -193,7 +180,7 @@ function berekenRitprijs(afstand, duur, weer) {
   else if (afstand <= 6) basis = 14.5;
   else if (afstand <= 7) basis = 16;
   else if (afstand <= 8) basis = 17.5;
-  else if (afstand <= 9) basis = 20;
+  else if (afstand <= 9) basis = 19;
   else basis = 2.5 + (afstand * 1.5) + (duur * 0.5);
 
   let weerToeslag = 1;
@@ -264,7 +251,7 @@ async function berekenRit() {
   document.getElementById("resultaat").innerText = `🚖 Ritprijs: €${ritprijs.toFixed(2)}\nAfstand: ${afstandKm.toFixed(1)} km\nDuur: ${duurMin.toFixed(0)} min\n💳 Betaalmethode: ${betaalmethode}\n📌 Annuleringskosten: €10 (niet inbegrepen)\n🎁 Korting toegepast: €${adminData.kortingBedrag}`;
 
   const bericht = `📲 Nieuw ritverzoek\n📍 Ophaaladres: ${ophalen}\n📍 Afzetadres: ${afzetten}\n🕒 Tijdstip: ${tijd}\n💳 Betaalmethode: ${betaalmethode}\n${document.getElementById("resultaat").innerText}`;
-  document.getElementById("whatsappKnop").href = `https://wa.me/31647972301?text=${encodeURIComponent(bericht)}`;
+  document.getElementById("whatsappKnop").href = `https://wa.me/3147972301?text=${encodeURIComponent(bericht)}`;
   document.getElementById("whatsappKnop").style.display = "block";
 }
 
